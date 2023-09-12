@@ -23,7 +23,8 @@ int main()
     // Init
     Hud character;
 
-    Model scene = LoadModel("assets/models/scene0.obj");
+    // Model scene = LoadModel("assets/models/scene0.obj");
+    Model scene = LoadModel("assets/models/sceneBSP.obj");
 
     Model cube = LoadModelFromMesh(GenMeshCube(0.5,0.5,0.5));
 
@@ -43,6 +44,20 @@ int main()
 
     Vector2 angle = {0,0};
 
+    camera.position = {0,3,-3};
+    camera.target = {0,0,0};
+
+    // bsp test
+    std::vector<Vector3> vertices;
+    for(int i = 0; i < scene.meshes[0].vertexCount; i++)
+    {
+        vertices.push_back({scene.meshes[0].vertices[i*3],scene.meshes[0].vertices[i*3+1],scene.meshes[0].vertices[i*3+2]});
+    }
+
+    std::cout << "Creating BSP tree from " << vertices.size() << " vertices..." << std::endl;
+
+    BSPNode * tree = BuildBSPTree(vertices);
+
     // Player physics
 
     float playerVerticalSpeed = 0;
@@ -57,8 +72,8 @@ int main()
         // Update camera
         if(IsCursorOnScreen()&&IsMouseButtonPressed(MOUSE_BUTTON_LEFT)&&!IsCursorHidden()) DisableCursor();
 
-        camera.target = cameraVSupport.getGlobalPosition();
-        camera.position = player.getGlobalPosition();
+        // camera.target = cameraVSupport.getGlobalPosition();
+        // camera.position = player.getGlobalPosition();
 
         if(IsCursorHidden())
         {
@@ -70,7 +85,7 @@ int main()
         }
 
 
-        player.transform.rotation = QuaternionProduct(VectorAngleQuaternion({1,0,0},angle.y),VectorAngleQuaternion({0,1,0},angle.x));
+        // player.transform.rotation = QuaternionProduct(VectorAngleQuaternion({1,0,0},angle.y),VectorAngleQuaternion({0,1,0},angle.x));
 
         // Movement
 
@@ -120,11 +135,9 @@ int main()
 
             playerMove.y += playerVerticalSpeed;
 
-            bool coll = CheckCollisionSphereMesh(playerMove,playerRadius,scene.meshes[0],&shiftDelta);
+            // bool coll = CheckCollisionSphereMesh(playerMove,playerRadius,scene.meshes[0],&shiftDelta);
 
             player.transform.translation = {playerMove.x+shiftDelta.x,playerMove.y+shiftDelta.y,playerMove.z+shiftDelta.z};
-
-            std::cout << "Hay collision: " << coll << " Posicion " << Vector3String(playerMove) << "\tVector de correccion " << Vector3String(shiftDelta) << std::endl;
         }
 
         // Other
@@ -136,11 +149,21 @@ int main()
 
         player.update();
 
+        if(IsPointValidBSP(player.getGlobalPosition(),tree)) 
+            playerColor = GREEN;
+        else 
+            playerColor = RED;
+
+        DrawModel(LoadModelFromMesh(GenMeshSphere(0.2f,10,10)),player.getGlobalPosition(),1,playerColor);
+
         DrawModel(scene,Vector3{0,0,0},1.0f,DARKGRAY);
 
         DrawModelWires(scene,Vector3{0,0,0},1.0f,RED);
 
-        DrawGrid(10, 1.0f);
+
+        // DrawSphereWires(player.getGlobalPosition(),playerRadius,10,10,BLUE);
+
+        // DrawGrid(10, 1.0f);
 
         EndMode3D();
 
@@ -150,6 +173,8 @@ int main()
 
         // character.hudPos = {(float)((short)(character.hudPos.x + 10) % screenWidth), (float)((short)(character.hudPos.y + 10) % screenHeight)};
         // character.size = { (float)32.0f*(screenWidth/(float)emuScreenWidth),(float)32.0f*(screenWidth/(float)emuScreenWidth)};
+
+        
 
         // character.draw({((float)screenWidth/emuScreenWidth),((float)screenWidth/emuScreenWidth)},{0,(float)screenHeight});
         // character.draw({((float)screenWidth/emuScreenWidth),((float)screenWidth/emuScreenWidth)},{0,(float)screenHeight});

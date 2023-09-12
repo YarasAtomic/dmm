@@ -70,7 +70,7 @@ bool isPointLeftOf(Vector2 a,Vector2 b,Vector2 p)
     return (area > 0.0f);
 }
 
-bool simpleRaycastSphere(Vector3 o, Vector3 d, Vector3 so, float radius2, Vector3 * minDistance)
+bool simpleRaycastSphere(Vector3 o, Vector3 d, Vector3 so, float radius2)
 {
     // o: raycast origin
     // d: raycastvector
@@ -80,8 +80,6 @@ bool simpleRaycastSphere(Vector3 o, Vector3 d, Vector3 so, float radius2, Vector
     // we pass in d non-normalized to keep it's length
     // then we use that length later to compare the intersection point to make sure
     // we're within the actual ray segment
-    *minDistance = {INFINITY,INFINITY,INFINITY};
-
     float l = Vector3Length(d);
     d = {d.x/l,d.y/l,d.z/l};
 
@@ -108,16 +106,6 @@ bool simpleRaycastSphere(Vector3 o, Vector3 d, Vector3 so, float radius2, Vector
     // Ray doesnt reach the sphere
     if (t > l)
         return false;
-
-    // 
-
-    // b*=-1;
-
-    d = {d.x*b,d.y*b,d.z*b};
- 
-    *minDistance = Vector3Subtract(d,m);
-
-    // (*minDistance) = Vector3Subtract({-m.x,-m.y,-m.z},d);
 
     return true;
 }

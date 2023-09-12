@@ -2,6 +2,12 @@
 #include <math.h>
 #include <string>
 
+struct Plane
+{
+    Vector3 point;
+    Vector3 normal;
+};
+
 float Vector3DotProduct(Vector3 v1, Vector3 v2);
 
 Vector3 Vector3Subtract(Vector3 v1, Vector3 v2);
@@ -18,7 +24,7 @@ bool isPointInside(Vector2 * poly,int pCount, Vector2 point);
 
 bool isPointLeftOf(Vector2 a,Vector2 b,Vector2 p);
 
-bool simpleRaycastSphere(Vector3 o, Vector3 d, Vector3 so, float radius2, Vector3 * minDistance);
+bool simpleRaycastSphere(Vector3 o, Vector3 d, Vector3 so, float radius2);
 
 std::string Vector3String(Vector3 v);
 

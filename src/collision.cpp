@@ -1,8 +1,12 @@
 #include "collision.h"
 #include <iostream>
 
-bool CheckCollisionSphereTri(Vector3 spherePos, float radius, Vector3 v0, Vector3 v1, Vector3 v2, Vector3 *shiftDelta, float * edgeDistanceSquared)
+bool CheckCollisionSphereTri(Vector3 spherePos, float radius, Vector3 v0, Vector3 v1, Vector3 v2, Vector3 *shiftDelta)
 {
+    // spherePos.x = spherePos.x+shiftDelta->x;
+    // spherePos.y = spherePos.y+shiftDelta->y;
+    // spherePos.z = spherePos.z+shiftDelta->z;
+
     bool collide = false;
 
     float squaredRadius = radius * radius;
@@ -58,25 +62,11 @@ bool CheckCollisionSphereTri(Vector3 spherePos, float radius, Vector3 v0, Vector
 
     if(!(outsideV0&&outsideV1&&outsideV2)) collide =  true;
 
-    Vector3 min0, min1, min2;
-
-    *edgeDistanceSquared = INFINITY;
-
-    bool ray0 = simpleRaycastSphere(v0,edge0,spherePos,squaredRadius,&min0);
-    bool ray1 = simpleRaycastSphere(v1,edge1,spherePos,squaredRadius,&min1);
-    bool ray2 = simpleRaycastSphere(v2,edge2,spherePos,squaredRadius,&min2);
-
-    if(!(!ray0 &&!ray1 &&!ray2)) 
+    if(!(
+        !simpleRaycastSphere(v0,edge0,spherePos,squaredRadius) &&
+        !simpleRaycastSphere(v1,edge1,spherePos,squaredRadius) &&
+        !simpleRaycastSphere(v2,edge2,spherePos,squaredRadius))) 
     {
-        float d0 = Vector3LengthSquared(min0);
-        float d1 = Vector3LengthSquared(min1);
-        float d2 = Vector3LengthSquared(min2);
-
-        *edgeDistanceSquared = d0 < d1 ? d0 : d1;
-        *edgeDistanceSquared = *edgeDistanceSquared < d2 ? *edgeDistanceSquared : d2;
-
-        std::cout << "MIN edge distance " << *edgeDistanceSquared << std::endl;
-
         collide = true;
     }
 
@@ -88,7 +78,8 @@ bool CheckCollisionSphereTri(Vector3 spherePos, float radius, Vector3 v0, Vector
 
 bool CheckCollisionSphereMesh(Vector3 spherePos, float radius,Mesh mesh, Vector3 *shiftDelta)
 {
-    *shiftDelta = {0,0,0};
+    // (*shiftDelta) = {INFINITY,INFINITY,INFINITY};
+    (*shiftDelta) = {0,0,0};
 
     bool hasIndex = false; // TODO
 
@@ -121,9 +112,11 @@ bool CheckCollisionSphereMesh(Vector3 spherePos, float radius,Mesh mesh, Vector3
     }
     else
     {
-        float minDistanceSquared = INFINITY;
+        Vector3 equidistantLine = {0,0,0};
+        Vector3 lastNormal = {0,0,0};
 
-        int j = 0;
+        Vector3 currentDelta = {0,0,0};
+
         for(int i = 0; i < mesh.vertexCount; i+=3)
         {
             Vector3 v0;
@@ -142,33 +135,270 @@ bool CheckCollisionSphereMesh(Vector3 spherePos, float radius,Mesh mesh, Vector3
             v2.y = mesh.vertices[i*3+7];
             v2.z = mesh.vertices[i*3+8];
 
-            float currentMinDistance = INFINITY;
+            if(CheckCollisionSphereTri(spherePos,radius,v0,v1,v2,shiftDelta))
+            {
+                // if(Vector3LengthSquared(currentDelta) > Vector3LengthSquared(*shiftDelta))
+                // {
+                //     *shiftDelta = currentDelta;
+                // }
 
-            nCollisions = CheckCollisionSphereTri(spherePos,radius,v0,v1,v2,shiftDelta,&currentMinDistance) ? nCollisions + 1 : nCollisions;
-            
-            minDistanceSquared = currentMinDistance < minDistanceSquared ? currentMinDistance : minDistanceSquared;
+                nCollisions++;
 
-            // std::cout << "current min distance " << minDistanceSquared << std::endl;
+                // Vector3 edge0 = Vector3Subtract(v1, v0);
+                // Vector3 edge1 = Vector3Subtract(v2, v1);
+                // lastNormal = Vector3Normalized(Vector3CrossProduct(edge0, edge1));
+
+                // equidistantLine = {equidistantLine.x + lastNormal.x, equidistantLine.y + lastNormal.y, equidistantLine.z + lastNormal.z};
+            }
 
             collide = nCollisions > 0 ? true : false;
         }
 
         if(collide)
         {
-            if(minDistanceSquared>=INFINITY) 
-                *shiftDelta = {shiftDelta->x/(float)nCollisions,shiftDelta->y/(float)nCollisions,shiftDelta->z/(float)nCollisions};
-            else
-            {
-                float shiftDeltaLengthSquared = Vector3LengthSquared(*shiftDelta);
-                if(minDistanceSquared<shiftDeltaLengthSquared)
-                {
-                    float shiftDeltaLength = sqrt(shiftDeltaLengthSquared);
-                    float minDistance = sqrt(minDistanceSquared);
-                    *shiftDelta = {shiftDelta->x/shiftDeltaLength*minDistance,shiftDelta->y/shiftDeltaLength*minDistance,shiftDelta->z/shiftDeltaLength*minDistance};
-                }
-            }
+            // equidistantLine = Vector3Normalized(equidistantLine);
+
+            // float sin =abs(  Vector3DotProduct(equidistantLine,lastNormal));
+            // float eLineDistance = radius/sin - radius;
+
+            // *shiftDelta = {
+            //     shiftDelta->x/(float)nCollisions - (equidistantLine.x*eLineDistance),
+            //     shiftDelta->y/(float)nCollisions - (equidistantLine.y*eLineDistance),
+            //     shiftDelta->z/(float)nCollisions - (equidistantLine.z*eLineDistance)};
+
+            *shiftDelta = {
+                shiftDelta->x/(float)nCollisions,
+                shiftDelta->y/(float)nCollisions,
+                shiftDelta->z/(float)nCollisions};
+
+            // *shiftDelta = {
+            //     shiftDelta->x,
+            //     shiftDelta->y,
+            //     shiftDelta->z};
+
         }
+        else *shiftDelta = {0,0,0};
+            
     }
     
     return collide;
+}
+
+BSPNode* BuildBSPTree(std::vector<Vector3>& vertices) {
+    if (vertices.empty()) {
+        return nullptr;
+    }
+
+    // Seleccionar un plano de división (simplificado: plano mediano).
+    std::cout << "Seleccionando plano de division" << std::endl;
+    Plane divisionPlane = SelectDivisionPlane(vertices);
+
+    std::cout << "div " << Vector3String(divisionPlane.normal) << std::endl;
+    // Crear un nuevo nodo BSP.
+    std::cout << "Creando nuevo nodo" << std::endl;
+    BSPNode* node = new BSPNode;
+    node->divisionPlane = divisionPlane;
+
+    // Dividir los objetos sólidos según el plano de división.
+    std::cout << "Dividiendo vertices entre los lados del plano" << std::endl;
+    std::vector<Vector3> frontObjects;
+    std::vector<Vector3> backObjects;
+    SplitSolidObjects(vertices, divisionPlane, frontObjects, backObjects);
+
+    // Construir recursivamente los subárboles.
+    std::cout << "Recursion " << frontObjects.size() << " " << backObjects.size() << std::endl;
+    node->frontChild = BuildBSPTree(frontObjects);
+    node->backChild = BuildBSPTree(backObjects);
+    std::cout << "Out" << std::endl;
+    return node;
+}
+
+Plane SelectDivisionPlane(std::vector<Vector3>& vertices)
+{
+    int minDifference = (int)INFINITY;
+    Plane bestPlane;
+    int bestTri = -1;
+
+    // For each triangle, we obtain the plane it defines and test if it insersects with any other triangle
+    for(int i = 0 ; i < vertices.size(); i+=3)
+    {
+        Vector3 v0 = vertices[i];;
+        Vector3 v1 = vertices[i+1];;
+        Vector3 v2 = vertices[i+2];;
+
+        Vector3 edge0 = Vector3Subtract(v1, v0);
+        Vector3 edge1 = Vector3Subtract(v2, v1);
+
+        Vector3 normal = Vector3Normalized(Vector3CrossProduct(edge0, edge1));
+
+        std::cout << "PUNTO " << Vector3String(v0) << " NORMAL " << Vector3String(normal) << std::endl;
+
+        Plane plane;
+        plane.normal = normal;
+        plane.point = v0;
+
+        int nTrisInFront = 0;
+        bool valid = true;
+
+        // We test the intersection with the rest of triangles
+        for(int k = 0 ; k < vertices.size()&&valid; k+=3)
+        {
+            int isTriOP = IsPolyOutsidePlane({vertices[k],vertices[k+1],vertices[k+2]},plane);
+
+            nTrisInFront+=isTriOP;
+
+            if(isTriOP == 0) 
+            {
+                std::cout << "miscoj" << std::endl;
+                valid = false;
+            }
+        }
+
+        // If the plane doesnt insersect with any tri and has a better vertex balance between both sides
+        if(abs(nTrisInFront) < minDifference && valid)
+        {
+            minDifference = abs(nTrisInFront);
+            bestPlane = plane;
+            bestTri = i;
+        }
+    }
+
+    if(bestTri!=-1)
+    {
+        std::cout << "Eliminando triangulo usado " <<  bestTri << " size " << vertices.size() << " ASFFFFFFFFFFFFFFFFFFFFFFFF" << std::endl;
+        for(int k = 0; k < vertices.size();k++) std::cout << "v" << k << ":\t" << Vector3String(vertices[k]) << std::endl;
+
+        // auto start = vertices.begin();
+        // for(int i = 0; i < bestTri; i++) start++;
+        // auto end = start;
+        // end++;
+        // end++;
+        // end++;
+
+        auto start = vertices.begin()+ bestTri;
+        auto end = start+3;
+
+        vertices.erase(start,end);
+
+        std::cout << "AAAAAAASSSSSSS" << std::endl;
+        for(int k = 0; k < vertices.size();k++) std::cout << "v" << k << ":\t" << Vector3String(vertices[k]) << std::endl;
+    }
+
+    return bestPlane;
+}
+
+int IsMeshOutsidePlane(Mesh mesh,Plane plane)
+{
+    bool isNegative = true;
+
+    for(int i = 0; i < mesh.vertexCount;i+=3)
+    {
+        Vector3 vertexPos = {mesh.vertices[i],mesh.vertices[i+1],mesh.vertices[i+2]};
+
+        Vector3 h = Vector3Subtract(vertexPos, plane.point);
+
+        float distance = Vector3DotProduct(plane.normal,h);
+
+        if(i==0)
+        {
+            isNegative = std::signbit(distance);
+        }
+        else
+        {
+            if(std::signbit(distance)!=isNegative) return 0;
+        }
+    }
+
+    return isNegative ? -1 : 1;
+}
+
+int IsPolyOutsidePlane(const std::vector<Vector3>& v,Plane plane)
+{
+    bool isNegative = true;
+    bool firstValid = false;
+
+    for(int i = 0; i < v.size(); i++)
+    {
+        Vector3 h = Vector3Subtract(v[i], plane.point);
+
+        float distance = Vector3DotProduct(plane.normal,h);
+
+        if(!firstValid)
+        {
+            if(distance!=0)
+            {
+                isNegative = (distance < 0);
+                firstValid = true;
+            }
+        }
+        else
+        {
+            if((distance < 0)!=isNegative && distance!=0) return 0;
+        }
+
+    }
+
+    return isNegative ? -1 : 1; 
+}
+
+void SplitSolidObjects(std::vector<Vector3>& vertices,Plane plane,std::vector<Vector3>& frontTris,std::vector<Vector3>& backTris)
+{
+    int j = 0;
+    bool putOnBack = true;
+    for(int i = 0; i < vertices.size(); i++)
+    {
+        Vector3 h = Vector3Subtract(vertices[i], plane.point);
+
+        float distance = Vector3DotProduct(plane.normal,h);
+
+        std::cout << "distance " << distance << " plane normal " << Vector3String(plane.normal) << " plane point " << Vector3String(plane.point) << " vertex " << Vector3String(vertices[i]) << std::endl;
+
+        if(distance < 0)
+            putOnBack = true;
+        else if(distance > 0)
+            putOnBack = false;
+
+        // When we reach the third vertex of a triangle
+        if(j == 2)
+        {
+            if(putOnBack) 
+            {
+                std::cout << "on back " << std::endl;
+                backTris.push_back(vertices[i-2]);
+                backTris.push_back(vertices[i-1]);
+                backTris.push_back(vertices[i]);
+            }
+            else
+            {
+                std::cout << "on front " << std::endl;
+                frontTris.push_back(vertices[i-2]);
+                frontTris.push_back(vertices[i-1]);
+                frontTris.push_back(vertices[i]);
+            }
+        }
+
+        j = (j + 1) % 3;
+    }
+}
+
+bool IsPointValidBSP(Vector3 point,BSPNode * node)
+{
+        Vector3 h = Vector3Subtract(point, node->divisionPlane.point);
+
+        float distance = Vector3DotProduct(node->divisionPlane.normal,h);
+
+        if(distance < 0)
+        {
+            if(node->backChild != nullptr) 
+                return IsPointValidBSP(point, node->backChild);
+            else
+                return false;
+        }
+        else
+        {
+            if(node->frontChild != nullptr) 
+                return IsPointValidBSP(point, node->frontChild);
+            else
+                return true;
+        }
 }

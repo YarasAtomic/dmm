@@ -72,8 +72,8 @@ int main()
         // Update camera
         if(IsCursorOnScreen()&&IsMouseButtonPressed(MOUSE_BUTTON_LEFT)&&!IsCursorHidden()) DisableCursor();
 
-        // camera.target = cameraVSupport.getGlobalPosition();
-        // camera.position = player.getGlobalPosition();
+        camera.target = cameraVSupport.getGlobalPosition();
+        camera.position = player.getGlobalPosition();
 
         if(IsCursorHidden())
         {
@@ -85,7 +85,7 @@ int main()
         }
 
 
-        // player.transform.rotation = QuaternionProduct(VectorAngleQuaternion({1,0,0},angle.y),VectorAngleQuaternion({0,1,0},angle.x));
+        player.transform.rotation = QuaternionProduct(VectorAngleQuaternion({1,0,0},angle.y),VectorAngleQuaternion({0,1,0},angle.x));
 
         // Movement
 
@@ -136,8 +136,14 @@ int main()
             playerMove.y += playerVerticalSpeed;
 
             // bool coll = CheckCollisionSphereMesh(playerMove,playerRadius,scene.meshes[0],&shiftDelta);
-
-            player.transform.translation = {playerMove.x+shiftDelta.x,playerMove.y+shiftDelta.y,playerMove.z+shiftDelta.z};
+            if(IsPointValidBSP({playerMove.x,playerMove.y,playerMove.z},tree)) 
+            {
+                player.transform.translation = {playerMove.x+shiftDelta.x,playerMove.y+shiftDelta.y,playerMove.z+shiftDelta.z};
+                playerColor = GREEN;
+            }
+                
+            else 
+                playerColor = RED;
         }
 
         // Other
@@ -148,11 +154,6 @@ int main()
         BeginMode3D(camera);
 
         player.update();
-
-        if(IsPointValidBSP(player.getGlobalPosition(),tree)) 
-            playerColor = GREEN;
-        else 
-            playerColor = RED;
 
         DrawModel(LoadModelFromMesh(GenMeshSphere(0.2f,10,10)),player.getGlobalPosition(),1,playerColor);
 

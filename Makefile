@@ -44,9 +44,9 @@ else
 		OUT= Linux build ...
 		OSNAME = LINUX
 		BIN = dmm
-		LIBS = -lglut -lGLU -lGL -lc -lm -lX11 -lportaudio -lsndfile
-		LIBSDIR = -L/usr/lib
-		INCLUDEDIR = -I/usr/include
+		LIBS = -lraylib
+		LIBSDIR = -L/usr/local/lib
+		INCLUDEDIR = -I/usr/include -I /usr/local/include
 		
 	endif
 endif
@@ -75,11 +75,9 @@ run: build
 clean:
 ifeq ($(OSNAME),LINUX)
 	@rm $(OBJDIR)/*.o
-	@rm $(BUILDEDLIB)/*.a
 	@rm -r -f $(BIN)
 else
 	@del $(OBJDIR)\\*.o
-	@del $(BUILDEDLIB)\\*.a
 	@del $(BIN)
 endif
 

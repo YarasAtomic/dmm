@@ -25,4 +25,6 @@ int IsPolyOutsidePlane(const std::vector<Vector3>&,Plane plane);
 
 bool PointBSPCollision(Vector3 point,BSPNode * node);
 
-bool SphereBSPCollision(Vector3 point,BSPNode * node,Vector3 * shiftDelta,float * distance,int depth);
+bool PointBSPCollision(Vector3 point,BSPNode * node,Vector3 * shiftDelta,float * distance,int depth);
+
+bool BSPRay(BSPNode * node,Vector3 p0, Vector3 p1, Vector3 * intersection,Vector3 * normal);

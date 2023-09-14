@@ -12,15 +12,19 @@ float Vector3DotProduct(Vector3 v1, Vector3 v2);
 
 Vector3 Vector3Subtract(Vector3 v1, Vector3 v2);
 
+Vector3 Vector3Sum(Vector3 v1, Vector3 v2);
+
 Vector3 Vector3CrossProduct(Vector3 v1, Vector3 v2);
 
 Vector3 Vector3Normalized(Vector3 vector);
 
 float Vector3Length(Vector3 vector);
 
-Vector2 Vector3Project(Vector3 point, Vector3 planeX, Vector3 planeY);
+Vector2 Vector3PlaneProject(Vector3 point, Vector3 planeX, Vector3 planeY);
 
 Vector3 Vector3ScalarProduct(Vector3 v, float n);
+
+Vector3 Vector3NormalProject(Vector3 vector,Vector3 normal);
 
 bool isPointInside(Vector2 * poly,int pCount, Vector2 point);
 

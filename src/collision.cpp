@@ -34,8 +34,8 @@ bool CheckCollisionSphereTri(Vector3 spherePos, float radius, Vector3 v0, Vector
     Vector3 planeX = Vector3Normalized(edge0);
     Vector3 planeY = Vector3Normalized(Vector3CrossProduct(normal,edge0));
 
-    Vector2 planePos2D = Vector3Project(spherePos,planeX,planeY);
-    Vector2 triangle2D[3] = {Vector3Project(v0,planeX,planeY), Vector3Project(v1,planeX,planeY), Vector3Project(v2,planeX,planeY)};
+    Vector2 planePos2D = Vector3PlaneProject(spherePos,planeX,planeY);
+    Vector2 triangle2D[3] = {Vector3PlaneProject(v0,planeX,planeY), Vector3PlaneProject(v1,planeX,planeY), Vector3PlaneProject(v2,planeX,planeY)};
 
     if(isPointInside(triangle2D,3,planePos2D)) collide = true;
 
@@ -386,7 +386,7 @@ bool PointBSPCollision(Vector3 point,BSPNode * node)
     }
 }
 
-bool SphereBSPCollision(Vector3 point,BSPNode * node,Vector3 * shiftDelta,float * distance,int depth)
+bool PointBSPCollision(Vector3 point,BSPNode * node,Vector3 * shiftDelta,float * distance,int depth)
 {
     Vector3 h = Vector3Subtract(point, node->divisionPlane.point);
 
@@ -410,7 +410,7 @@ bool SphereBSPCollision(Vector3 point,BSPNode * node,Vector3 * shiftDelta,float 
         // }
 
         if(node->backChild != nullptr) 
-            return SphereBSPCollision(point, node->backChild,shiftDelta,distance,depth+1);
+            return PointBSPCollision(point, node->backChild,shiftDelta,distance,depth+1);
         else
             return true;
             
@@ -418,7 +418,7 @@ bool SphereBSPCollision(Vector3 point,BSPNode * node,Vector3 * shiftDelta,float 
     else
     {
         if(node->frontChild != nullptr) 
-            return SphereBSPCollision(point, node->frontChild,shiftDelta,distance,depth+1);
+            return PointBSPCollision(point, node->frontChild,shiftDelta,distance,depth+1);
         else
         {
             *shiftDelta = {0,0,0};
@@ -426,4 +426,44 @@ bool SphereBSPCollision(Vector3 point,BSPNode * node,Vector3 * shiftDelta,float 
         }
             
     }
+}
+
+bool BSPRay(BSPNode * node,Vector3 p0, Vector3 p1, Vector3 * intersection,Vector3 * normal)
+{
+    float dis0 = Vector3DotProduct(node->divisionPlane.normal,Vector3Subtract(p0, node->divisionPlane.point));
+    float dis1 = Vector3DotProduct(node->divisionPlane.normal,Vector3Subtract(p1, node->divisionPlane.point));
+    //Handle next
+    if((dis0 < 0 && dis1 < 0)) 
+    {
+        if(node->backChild == nullptr)
+        {
+            *intersection = p0;
+            return true;
+        }
+        else 
+            return BSPRay(node->backChild,p0,p1,intersection,normal);
+
+    }
+    
+    *normal = node->divisionPlane.normal;
+
+    if (dis0 >= 0 && dis1 >= 0)
+    {
+        if(node->frontChild == nullptr)
+            return false;
+        else
+            return BSPRay(node->frontChild,p0,p1,intersection,normal);
+    }
+
+    float frac = dis0 / (dis0 - dis1);
+    
+    Vector3 mid = {
+        p0.x + frac * (p1.x - p0.x),
+        p0.y + frac * (p1.y - p0.y),
+        p0.z + frac * (p1.z - p0.z)};
+
+    return (
+        (node->frontChild != nullptr && BSPRay(node->frontChild,p0,mid,intersection,normal))||
+        (node->backChild != nullptr && BSPRay(node->backChild,mid,p1,intersection,normal)));
+    
 }

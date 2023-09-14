@@ -46,7 +46,7 @@ int main()
 
     Vector2 angle = {0,0};
 
-    camera.position = {0,10,-3};
+    camera.position = {0,3,-3};
     camera.target = {0,0,0};
 
     // bsp test
@@ -77,12 +77,12 @@ int main()
         // Update camera
         if(IsCursorOnScreen()&&IsMouseButtonPressed(MOUSE_BUTTON_LEFT)&&!IsCursorHidden()) DisableCursor();
 
-        // camera.target = cameraVSupport.getGlobalPosition();
-        // camera.position = player.getGlobalPosition();
+        camera.target = cameraVSupport.getGlobalPosition();
+        camera.position = player.getGlobalPosition();
 
         if(IsCursorHidden())
         {
-            // angle.x+=(float)GetMouseDelta().x/screenWidth*sensitivity;
+            angle.x+=(float)GetMouseDelta().x/screenWidth*sensitivity;
             float temp = angle.y - ((float)GetMouseDelta().y/screenWidth*sensitivity);
             angle.y = (temp > -3/2 && temp < 3/2) ? temp : angle.y; // Limits the vertical view
 
@@ -138,24 +138,27 @@ int main()
 
                 playerVerticalSpeed = playerVerticalSpeed < 0 ? 0 : playerVerticalSpeed;
             }
-            else
-                playerVerticalSpeed -= gravity;
+            // else
+            //     playerVerticalSpeed -= gravity;
                 
-            playerMove.y += playerVerticalSpeed;
+            // playerMove.y += playerVerticalSpeed;
+
             // playerVelocity.y+=playerVerticalSpeed;
 
             // bool coll = CheckCollisionSphereMesh(playerMove,playerRadius,scene.meshes[0],&shiftDelta);
-            float distance = INFINITY;
-            int bspIterations = 0;
-            while(SphereBSPCollision({playerMove.x,playerMove.y,playerMove.z},tree,&shiftDelta,&distance,0))
-            {
-                playerMove = {playerMove.x+shiftDelta.x,playerMove.y+shiftDelta.y,playerMove.z+shiftDelta.z};
-                shiftDelta = {0,0,0};
-                bspIterations++;
-            }
-            std::cout << "BSP " << bspIterations << std::endl;
+            // float distance = INFINITY;
+            // int bspIterations = 0;
+            // shiftDelta = {0,0,0};
+            // while(SphereBSPCollision({playerMove.x,playerMove.y,playerMove.z},tree,&shiftDelta,&distance,0))
+            // {
+            //     playerMove = {playerMove.x+shiftDelta.x,playerMove.y+shiftDelta.y,playerMove.z+shiftDelta.z};
+            //     std::cout << "DELTA " << Vector3String(shiftDelta) << std::endl;
+            //     shiftDelta = {0,0,0};
+            //     bspIterations++;
+            // }
+            // std::cout << "BSP " << bspIterations << std::endl;
             
-            player.transform.translation = {playerMove.x+shiftDelta.x,playerMove.y+shiftDelta.y,playerMove.z+shiftDelta.z};
+            // player.transform.translation = {playerMove.x+shiftDelta.x,playerMove.y+shiftDelta.y,playerMove.z+shiftDelta.z};
 
             // playerVelocity = Vector3Subtract(playerVelocity,Vector3ScalarProduct(shiftDelta,Vector3DotProduct(playerVelocity,shiftDelta)));
 
@@ -163,6 +166,26 @@ int main()
             //     player.transform.translation.x+playerVelocity.x, 
             //     player.transform.translation.y+playerVelocity.y,
             //     player.transform.translation.z+playerVelocity.z};
+
+            // PointBSPCollision({playerMove.x,playerMove.y,playerMove.z},tree);
+
+            Vector3 intersection = playerMove;
+            Vector3 intersectionNormal;
+
+            if(BSPRay(tree,player.transform.translation,playerMove,&intersection,&intersectionNormal))
+            {
+                std::cout << "intersection " << Vector3String(intersection) << std::endl;
+                std::cout << "normal " << Vector3String(intersectionNormal) << std::endl;
+                std::cout << "projection " << Vector3String(Vector3NormalProject(Vector3Subtract(playerMove,intersection),intersectionNormal)) << std::endl;
+                Vector3 finalMovement =  Vector3Sum(Vector3NormalProject(Vector3Subtract(playerMove,intersection),intersectionNormal),intersection);
+                std::cout << "move " << Vector3String(finalMovement) << std::endl;
+                player.transform.translation = finalMovement;
+                // std::cout << "normal " << Vector3String(Vector3NormalProject(Vector3Subtract(playerMove,intersection),intersectionNormal)) << std::endl;
+                // player.transform.translation = intersection;
+            }
+                
+            // else
+            //     player.transform.translation = playerMove;
 
             if(!PointBSPCollision(player.transform.translation,tree))
                 playerColor = GREEN;  

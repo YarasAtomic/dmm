@@ -13,6 +13,14 @@ Vector3 Vector3Subtract(Vector3 v1, Vector3 v2) {
     return result;
 }
 
+Vector3 Vector3Sum(Vector3 v1, Vector3 v2) {
+    Vector3 result;
+    result.x = v1.x + v2.x;
+    result.y = v1.y + v2.y;
+    result.z = v1.z + v2.z;
+    return result;
+}
+
 Vector3 Vector3CrossProduct(Vector3 v1, Vector3 v2) {
     Vector3 result;
     result.x = v1.y * v2.z - v1.z * v2.y;
@@ -44,9 +52,14 @@ float Vector3LengthSquared(Vector3 vector)
     return vector.x * vector.x + vector.y * vector.y + vector.z * vector.z;
 }
 
-Vector2 Vector3Project(Vector3 point, Vector3 planeX, Vector3 planeY)
+Vector2 Vector3PlaneProject(Vector3 point, Vector3 planeX, Vector3 planeY)
 {
     return Vector2 {Vector3DotProduct(point,planeX),Vector3DotProduct(point,planeY)};
+}
+
+Vector3 Vector3NormalProject(Vector3 vector,Vector3 normal)
+{
+    return Vector3Subtract(vector,Vector3ScalarProduct(normal,Vector3DotProduct(vector,normal)));
 }
 
 Vector3 Vector3ScalarProduct(Vector3 v, float n)

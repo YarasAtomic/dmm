@@ -49,6 +49,11 @@ Vector2 Vector3Project(Vector3 point, Vector3 planeX, Vector3 planeY)
     return Vector2 {Vector3DotProduct(point,planeX),Vector3DotProduct(point,planeY)};
 }
 
+Vector3 Vector3ScalarProduct(Vector3 v, float n)
+{
+    return {v.x*n,v.y*n,v.z*n};
+}
+
 bool isPointInside(Vector2 * poly,int pCount, Vector2 point)
 {
     for(int i = 0 ; i < pCount; i++)

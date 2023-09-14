@@ -24,11 +24,13 @@ int main()
     Hud character;
 
     // Model scene = LoadModel("assets/models/scene0.obj");
-    Model scene = LoadModel("assets/models/sceneBSP.obj");
+    Model scene = LoadModel("assets/models/sceneBSP0.obj");
 
     Model cube = LoadModelFromMesh(GenMeshCube(0.5,0.5,0.5));
 
     Model cone = LoadModelFromMesh(GenMeshCone(0.1,1,10));
+
+    Model sphere = LoadModelFromMesh(GenMeshSphere(0.2f,10,10));
 
     Vector3 playerPos = {0,0.51,0};
 
@@ -50,13 +52,16 @@ int main()
     // bsp test
     std::vector<Vector3> vertices;
     for(int i = 0; i < scene.meshes[0].vertexCount; i++)
-    {
-        vertices.push_back({scene.meshes[0].vertices[i*3],scene.meshes[0].vertices[i*3+1],scene.meshes[0].vertices[i*3+2]});
-    }
+        vertices.push_back({
+            scene.meshes[0].vertices[i*3],
+            scene.meshes[0].vertices[i*3+1],
+            scene.meshes[0].vertices[i*3+2]});
 
     std::cout << "Creating BSP tree from " << vertices.size() << " vertices..." << std::endl;
 
     BSPNode * tree = BuildBSPTree(vertices);
+
+    std::cout << "BSP tree generated" << std::endl;
 
     // Player physics
 
@@ -72,12 +77,12 @@ int main()
         // Update camera
         if(IsCursorOnScreen()&&IsMouseButtonPressed(MOUSE_BUTTON_LEFT)&&!IsCursorHidden()) DisableCursor();
 
-        camera.target = cameraVSupport.getGlobalPosition();
-        camera.position = player.getGlobalPosition();
+        // camera.target = cameraVSupport.getGlobalPosition();
+        // camera.position = player.getGlobalPosition();
 
         if(IsCursorHidden())
         {
-            angle.x+=(float)GetMouseDelta().x/screenWidth*sensitivity;
+            // angle.x+=(float)GetMouseDelta().x/screenWidth*sensitivity;
             float temp = angle.y - ((float)GetMouseDelta().y/screenWidth*sensitivity);
             angle.y = (temp > -3/2 && temp < 3/2) ? temp : angle.y; // Limits the vertical view
 
@@ -103,6 +108,7 @@ int main()
         movement = {hMovement.x,0,hMovement.y};
 
         Vector3 playerMove = player.transform.translation;
+        Vector3 playerVelocity = {0,0,0};
 
         if(localHorizontalMovement.x!=0||localHorizontalMovement.y!=0)
         {
@@ -110,17 +116,20 @@ int main()
                 player.transform.translation.x + hMovement.x,
                 player.transform.translation.y,
                 player.transform.translation.z + hMovement.y};
+
+            playerVelocity = {hMovement.x,0,hMovement.y};
         }
 
         if(IsModelReady(scene))
         {
-            Vector3 shiftDelta;
 
-            Ray rayDown = {playerMove,{0,-1,0}};
+            Vector3 shiftDelta = {0,0,0};
+
+            Ray rayDown = {{playerMove.x,playerMove.y+0.1,playerMove.z},{0,-1,0}};
 
             RayCollision rayDownCollision = GetRayCollisionMesh(rayDown,scene.meshes[0],scene.transform);
 
-            if(rayDownCollision.distance<0.6)
+            if(rayDownCollision.distance<0.1&&rayDownCollision.hit)
             {
                 if(playerVerticalSpeed<=0)
                 {
@@ -129,19 +138,29 @@ int main()
 
                 playerVerticalSpeed = playerVerticalSpeed < 0 ? 0 : playerVerticalSpeed;
             }
-                
             else
                 playerVerticalSpeed -= gravity;
-
+                
             playerMove.y += playerVerticalSpeed;
+            // playerVelocity.y+=playerVerticalSpeed;
 
             // bool coll = CheckCollisionSphereMesh(playerMove,playerRadius,scene.meshes[0],&shiftDelta);
-            if(IsPointValidBSP({playerMove.x,playerMove.y,playerMove.z},tree)) 
-            {
-                player.transform.translation = {playerMove.x+shiftDelta.x,playerMove.y+shiftDelta.y,playerMove.z+shiftDelta.z};
-                playerColor = GREEN;
-            }
-                
+            float distance = INFINITY;
+            SphereBSPCollision({playerMove.x,playerMove.y,playerMove.z},tree,&shiftDelta,&distance,0);
+            
+            std::cout << "dis " << abs(distance) << " shiftDelta " << Vector3String(shiftDelta) << std::endl;
+
+            player.transform.translation = {playerMove.x+shiftDelta.x,playerMove.y+shiftDelta.y,playerMove.z+shiftDelta.z};
+
+            // playerVelocity = Vector3Subtract(playerVelocity,Vector3ScalarProduct(shiftDelta,Vector3DotProduct(playerVelocity,shiftDelta)));
+
+            // player.transform.translation = { 
+            //     player.transform.translation.x+playerVelocity.x, 
+            //     player.transform.translation.y+playerVelocity.y,
+            //     player.transform.translation.z+playerVelocity.z};
+
+            if(!PointBSPCollision(player.transform.translation,tree))
+                playerColor = GREEN;  
             else 
                 playerColor = RED;
         }
@@ -155,9 +174,12 @@ int main()
 
         player.update();
 
-        DrawModel(LoadModelFromMesh(GenMeshSphere(0.2f,10,10)),player.getGlobalPosition(),1,playerColor);
+        DrawModel(sphere,{
+            player.getGlobalPosition().x,
+            player.getGlobalPosition().y+0.0f,
+            player.getGlobalPosition().z},1,playerColor);
 
-        DrawModel(scene,Vector3{0,0,0},1.0f,DARKGRAY);
+        DrawModel(scene,Vector3{0,0,0},1.0f,WHITE);
 
         DrawModelWires(scene,Vector3{0,0,0},1.0f,RED);
 

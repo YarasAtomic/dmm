@@ -183,33 +183,29 @@ bool CheckCollisionSphereMesh(Vector3 spherePos, float radius,Mesh mesh, Vector3
     
     return collide;
 }
-
+int nNodes = 0;
 BSPNode* BuildBSPTree(std::vector<Vector3>& vertices) {
     if (vertices.empty()) {
         return nullptr;
     }
 
     // Seleccionar un plano de división (simplificado: plano mediano).
-    std::cout << "Seleccionando plano de division" << std::endl;
     Plane divisionPlane = SelectDivisionPlane(vertices);
 
-    std::cout << "div " << Vector3String(divisionPlane.normal) << std::endl;
     // Crear un nuevo nodo BSP.
-    std::cout << "Creando nuevo nodo" << std::endl;
     BSPNode* node = new BSPNode;
     node->divisionPlane = divisionPlane;
 
     // Dividir los objetos sólidos según el plano de división.
-    std::cout << "Dividiendo vertices entre los lados del plano" << std::endl;
     std::vector<Vector3> frontObjects;
     std::vector<Vector3> backObjects;
     SplitSolidObjects(vertices, divisionPlane, frontObjects, backObjects);
 
+    nNodes++;
+    std::cout << "Nodo creado " << nNodes << " separacion " << frontObjects.size() << " " << backObjects.size() << std::endl;
     // Construir recursivamente los subárboles.
-    std::cout << "Recursion " << frontObjects.size() << " " << backObjects.size() << std::endl;
     node->frontChild = BuildBSPTree(frontObjects);
     node->backChild = BuildBSPTree(backObjects);
-    std::cout << "Out" << std::endl;
     return node;
 }
 
@@ -231,8 +227,6 @@ Plane SelectDivisionPlane(std::vector<Vector3>& vertices)
 
         Vector3 normal = Vector3Normalized(Vector3CrossProduct(edge0, edge1));
 
-        std::cout << "PUNTO " << Vector3String(v0) << " NORMAL " << Vector3String(normal) << std::endl;
-
         Plane plane;
         plane.normal = normal;
         plane.point = v0;
@@ -249,7 +243,6 @@ Plane SelectDivisionPlane(std::vector<Vector3>& vertices)
 
             if(isTriOP == 0) 
             {
-                std::cout << "miscoj" << std::endl;
                 valid = false;
             }
         }
@@ -265,9 +258,6 @@ Plane SelectDivisionPlane(std::vector<Vector3>& vertices)
 
     if(bestTri!=-1)
     {
-        std::cout << "Eliminando triangulo usado " <<  bestTri << " size " << vertices.size() << " ASFFFFFFFFFFFFFFFFFFFFFFFF" << std::endl;
-        for(int k = 0; k < vertices.size();k++) std::cout << "v" << k << ":\t" << Vector3String(vertices[k]) << std::endl;
-
         // auto start = vertices.begin();
         // for(int i = 0; i < bestTri; i++) start++;
         // auto end = start;
@@ -279,9 +269,6 @@ Plane SelectDivisionPlane(std::vector<Vector3>& vertices)
         auto end = start+3;
 
         vertices.erase(start,end);
-
-        std::cout << "AAAAAAASSSSSSS" << std::endl;
-        for(int k = 0; k < vertices.size();k++) std::cout << "v" << k << ":\t" << Vector3String(vertices[k]) << std::endl;
     }
 
     return bestPlane;
@@ -351,8 +338,6 @@ void SplitSolidObjects(std::vector<Vector3>& vertices,Plane plane,std::vector<Ve
 
         float distance = Vector3DotProduct(plane.normal,h);
 
-        std::cout << "distance " << distance << " plane normal " << Vector3String(plane.normal) << " plane point " << Vector3String(plane.point) << " vertex " << Vector3String(vertices[i]) << std::endl;
-
         if(distance < 0)
             putOnBack = true;
         else if(distance > 0)
@@ -363,14 +348,12 @@ void SplitSolidObjects(std::vector<Vector3>& vertices,Plane plane,std::vector<Ve
         {
             if(putOnBack) 
             {
-                std::cout << "on back " << std::endl;
                 backTris.push_back(vertices[i-2]);
                 backTris.push_back(vertices[i-1]);
                 backTris.push_back(vertices[i]);
             }
             else
             {
-                std::cout << "on front " << std::endl;
                 frontTris.push_back(vertices[i-2]);
                 frontTris.push_back(vertices[i-1]);
                 frontTris.push_back(vertices[i]);
@@ -381,24 +364,69 @@ void SplitSolidObjects(std::vector<Vector3>& vertices,Plane plane,std::vector<Ve
     }
 }
 
-bool IsPointValidBSP(Vector3 point,BSPNode * node)
+bool PointBSPCollision(Vector3 point,BSPNode * node)
 {
-        Vector3 h = Vector3Subtract(point, node->divisionPlane.point);
+    Vector3 h = Vector3Subtract(point, node->divisionPlane.point);
 
-        float distance = Vector3DotProduct(node->divisionPlane.normal,h);
+    float distance = Vector3DotProduct(node->divisionPlane.normal,h);
 
-        if(distance < 0)
+    if(distance < 0)
+    {
+        if(node->backChild != nullptr) 
+            return PointBSPCollision(point, node->backChild);
+        else
+            return true;
+    }
+    else
+    {
+        if(node->frontChild != nullptr) 
+            return PointBSPCollision(point, node->frontChild);
+        else
+            return false;
+    }
+}
+
+bool SphereBSPCollision(Vector3 point,BSPNode * node,Vector3 * shiftDelta,float * distance,int depth)
+{
+    Vector3 h = Vector3Subtract(point, node->divisionPlane.point);
+
+    float dis = Vector3DotProduct(node->divisionPlane.normal,h);
+    std::cout << "DEPTH " << depth << std::endl;
+    if(dis <= 0)
+    {
+        (*shiftDelta) = {
+            node->divisionPlane.normal.x*(abs(dis))+shiftDelta->x,
+            node->divisionPlane.normal.y*(abs(dis))+shiftDelta->y,
+            node->divisionPlane.normal.z*(abs(dis))+shiftDelta->z};
+
+        std::cout << "DELTA " << Vector3String(*shiftDelta) << std::endl;
+
+        if(abs(dis) < abs(*distance))
         {
-            if(node->backChild != nullptr) 
-                return IsPointValidBSP(point, node->backChild);
-            else
-                return false;
+            // (*distance) = dis;
+            // (*shiftDelta) = {
+            //     node->divisionPlane.normal.x*(abs(*distance)),
+            //     node->divisionPlane.normal.y*(abs(*distance)),
+            //     node->divisionPlane.normal.z*(abs(*distance))};
+
+            // (*shiftDelta) = node->divisionPlane.normal;
         }
+
+        if(node->backChild != nullptr) 
+            return SphereBSPCollision(point, node->backChild,shiftDelta,distance,depth+1);
+        else
+            return true;
+            
+    }
+    else
+    {
+        if(node->frontChild != nullptr) 
+            return SphereBSPCollision(point, node->frontChild,shiftDelta,distance,depth+1);
         else
         {
-            if(node->frontChild != nullptr) 
-                return IsPointValidBSP(point, node->frontChild);
-            else
-                return true;
+            *shiftDelta = {0,0,0};
+            return false;
         }
+            
+    }
 }

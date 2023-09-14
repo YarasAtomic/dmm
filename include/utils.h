@@ -20,6 +20,8 @@ float Vector3Length(Vector3 vector);
 
 Vector2 Vector3Project(Vector3 point, Vector3 planeX, Vector3 planeY);
 
+Vector3 Vector3ScalarProduct(Vector3 v, float n);
+
 bool isPointInside(Vector2 * poly,int pCount, Vector2 point);
 
 bool isPointLeftOf(Vector2 a,Vector2 b,Vector2 p);

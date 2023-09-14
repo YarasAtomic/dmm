@@ -23,4 +23,6 @@ int IsMeshOutsidePlane(Mesh mesh,Plane plane);
 
 int IsPolyOutsidePlane(const std::vector<Vector3>&,Plane plane);
 
-bool IsPointValidBSP(Vector3 point,BSPNode * node);
+bool PointBSPCollision(Vector3 point,BSPNode * node);
+
+bool SphereBSPCollision(Vector3 point,BSPNode * node,Vector3 * shiftDelta,float * distance,int depth);

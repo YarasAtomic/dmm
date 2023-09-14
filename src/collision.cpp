@@ -391,26 +391,23 @@ bool SphereBSPCollision(Vector3 point,BSPNode * node,Vector3 * shiftDelta,float 
     Vector3 h = Vector3Subtract(point, node->divisionPlane.point);
 
     float dis = Vector3DotProduct(node->divisionPlane.normal,h);
-    std::cout << "DEPTH " << depth << std::endl;
-    if(dis <= 0)
+    if(dis < 0)
     {
         (*shiftDelta) = {
             node->divisionPlane.normal.x*(abs(dis))+shiftDelta->x,
             node->divisionPlane.normal.y*(abs(dis))+shiftDelta->y,
             node->divisionPlane.normal.z*(abs(dis))+shiftDelta->z};
 
-        std::cout << "DELTA " << Vector3String(*shiftDelta) << std::endl;
+        // if(abs(dis) < abs(*distance))
+        // {
+        //     // (*distance) = dis;
+        //     // (*shiftDelta) = {
+        //     //     node->divisionPlane.normal.x*(abs(*distance)),
+        //     //     node->divisionPlane.normal.y*(abs(*distance)),
+        //     //     node->divisionPlane.normal.z*(abs(*distance))};
 
-        if(abs(dis) < abs(*distance))
-        {
-            // (*distance) = dis;
-            // (*shiftDelta) = {
-            //     node->divisionPlane.normal.x*(abs(*distance)),
-            //     node->divisionPlane.normal.y*(abs(*distance)),
-            //     node->divisionPlane.normal.z*(abs(*distance))};
-
-            // (*shiftDelta) = node->divisionPlane.normal;
-        }
+        //     // (*shiftDelta) = node->divisionPlane.normal;
+        // }
 
         if(node->backChild != nullptr) 
             return SphereBSPCollision(point, node->backChild,shiftDelta,distance,depth+1);

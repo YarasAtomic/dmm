@@ -11,7 +11,7 @@ int main()
     SetConfigFlags(FLAG_WINDOW_RESIZABLE); 
 
     InitWindow(screenWidth, screenHeight, "DMM");
-    MaximizeWindow();
+    // MaximizeWindow();
 
     SetTargetFPS(60);
 
@@ -24,7 +24,7 @@ int main()
     Hud character;
 
     // Model scene = LoadModel("assets/models/scene0.obj");
-    Model scene = LoadModel("assets/models/sceneBSP0.obj");
+    Model scene = LoadModel("assets/models/sceneBSP1.obj");
 
     Model cube = LoadModelFromMesh(GenMeshCube(0.5,0.5,0.5));
 
@@ -46,7 +46,7 @@ int main()
 
     Vector2 angle = {0,0};
 
-    camera.position = {0,3,-3};
+    camera.position = {0,10,-3};
     camera.target = {0,0,0};
 
     // bsp test
@@ -125,7 +125,7 @@ int main()
 
             Vector3 shiftDelta = {0,0,0};
 
-            Ray rayDown = {{playerMove.x,playerMove.y+0.1,playerMove.z},{0,-1,0}};
+            Ray rayDown = {{playerMove.x,playerMove.y+0.6,playerMove.z},{0,-1,0}};
 
             RayCollision rayDownCollision = GetRayCollisionMesh(rayDown,scene.meshes[0],scene.transform);
 
@@ -146,10 +146,15 @@ int main()
 
             // bool coll = CheckCollisionSphereMesh(playerMove,playerRadius,scene.meshes[0],&shiftDelta);
             float distance = INFINITY;
-            SphereBSPCollision({playerMove.x,playerMove.y,playerMove.z},tree,&shiftDelta,&distance,0);
+            int bspIterations = 0;
+            while(SphereBSPCollision({playerMove.x,playerMove.y,playerMove.z},tree,&shiftDelta,&distance,0))
+            {
+                playerMove = {playerMove.x+shiftDelta.x,playerMove.y+shiftDelta.y,playerMove.z+shiftDelta.z};
+                shiftDelta = {0,0,0};
+                bspIterations++;
+            }
+            std::cout << "BSP " << bspIterations << std::endl;
             
-            std::cout << "dis " << abs(distance) << " shiftDelta " << Vector3String(shiftDelta) << std::endl;
-
             player.transform.translation = {playerMove.x+shiftDelta.x,playerMove.y+shiftDelta.y,playerMove.z+shiftDelta.z};
 
             // playerVelocity = Vector3Subtract(playerVelocity,Vector3ScalarProduct(shiftDelta,Vector3DotProduct(playerVelocity,shiftDelta)));

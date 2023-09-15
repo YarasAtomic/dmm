@@ -174,15 +174,14 @@ int main()
 
             if(BSPRay(tree,player.transform.translation,playerMove,&intersection,&intersectionNormal))
             {
-                std::cout << "intersection " << Vector3String(intersection) << std::endl;
-                std::cout << "normal " << Vector3String(intersectionNormal) << std::endl;
-                std::cout << "projection " << Vector3String(Vector3NormalProject(Vector3Subtract(playerMove,intersection),intersectionNormal)) << std::endl;
-                Vector3 finalMovement =  Vector3Sum(Vector3NormalProject(Vector3Subtract(playerMove,intersection),intersectionNormal),intersection);
-                std::cout << "move " << Vector3String(finalMovement) << std::endl;
-                player.transform.translation = finalMovement;
-                // std::cout << "normal " << Vector3String(Vector3NormalProject(Vector3Subtract(playerMove,intersection),intersectionNormal)) << std::endl;
-                // player.transform.translation = intersection;
+                // std::cout << "intersection " << Vector3String(intersection) << std::endl;
+                // std::cout << "normal " << Vector3String(intersectionNormal) << std::endl;
+                // std::cout << "projection " << Vector3String(Vector3NormalProject(Vector3Subtract(playerMove,intersection),intersectionNormal)) << std::endl;
+                playerMove =  Vector3Sum(Vector3NormalProject(Vector3Subtract(playerMove,intersection),intersectionNormal),intersection);
+                // std::cout << "move " << Vector3String(playerMove) << std::endl;
             }
+            // std::cout << "player move " << Vector3String(playerMove) << std::endl; 
+            player.transform.translation = playerMove;
                 
             // else
             //     player.transform.translation = playerMove;

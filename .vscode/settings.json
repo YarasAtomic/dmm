@@ -50,6 +50,11 @@
             "cwd": "g:\\OneLeggedGuy\\Coding\\dmm",
             "binaryPath": "g:\\OneLeggedGuy\\Coding\\dmm\\dmm.exe",
             "binaryArgs": []
+        },
+        {
+            "cwd": "/home/oneleggedguy/Code/dmm",
+            "binaryPath": "/home/oneleggedguy/Code/dmm/dmm",
+            "binaryArgs": []
         }
     ]
 }
